@@ -1,0 +1,3 @@
+maplibre-gl 5.24.0 (BSD-3)
+pmtiles 4.5.0 (BSD-3)
+завантажено npm pack 2026-10-26

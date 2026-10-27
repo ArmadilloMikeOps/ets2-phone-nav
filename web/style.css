@@ -1,0 +1,358 @@
+:root {
+  --bg: #0b0d10;
+  --panel: #151a20;
+  --line: #242b34;
+  --text: #f2f5f8;
+  --muted: #8a96a3;
+  --accent: #ffb020;
+  --good: #3ddc84;
+  --bad: #ff4d4f;
+  --limit-ring: #e5252a;
+  --tabs-h: 56px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.25 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+small { font-size: 0.35em; color: var(--muted); margin-left: 0.25em; font-weight: 500; }
+.label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.big { font-size: clamp(22px, 5vw, 36px); font-weight: 600; }
+.huge { font-size: clamp(56px, 14vw, 120px); font-weight: 700; line-height: 1; }
+.muted { color: var(--muted); }
+.good { color: var(--good); }
+.bad { color: var(--bad); }
+
+/* --- сторінки: горизонтальна стрічка, гортається свайпом --- */
+#pages {
+  display: flex;
+  height: calc(100% - var(--tabs-h) - env(safe-area-inset-bottom));
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+#pages::-webkit-scrollbar { display: none; }
+.page {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  padding: 16px 20px;
+  display: flex;
+  gap: 20px;
+  overflow: hidden;
+}
+
+/* --- вкладки --- */
+.tabs {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: calc(var(--tabs-h) + env(safe-area-inset-bottom));
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display: flex;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+}
+.tabs button {
+  flex: 1;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+.tabs button.active { color: var(--accent); }
+
+/* --- статус і тост --- */
+.status {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: #3a2a00;
+  color: var(--accent);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.status.error { background: #3a0c0d; color: var(--bad); }
+.toast {
+  position: fixed;
+  bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* --- навігація --- */
+.nav-main { flex: 1; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.nav-main .row { display: flex; gap: 32px; }
+.dest-city { font-size: clamp(24px, 6vw, 40px); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dest-company { font-size: 18px; color: var(--muted); }
+.hint { margin-top: auto; font-size: 12px; color: var(--muted); }
+.nav-side { width: 34%; max-width: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.speed-small { font-size: clamp(40px, 9vw, 64px); font-weight: 700; }
+.clock { font-size: 22px; font-weight: 600; }
+.rest { font-size: 14px; color: var(--muted); text-align: center; }
+
+/* знак обмеження швидкості */
+.limit {
+  width: 112px; height: 112px;
+  border-radius: 50%;
+  background: #fff;
+  border: 12px solid var(--limit-ring);
+  color: #111;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; font-weight: 800;
+}
+.limit.small { width: 64px; height: 64px; border-width: 7px; font-size: 22px; }
+.limit[hidden] { display: none; }
+.cruise {
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: #0f2a1a;
+  color: var(--good);
+  font-weight: 700;
+}
+.cruise[hidden] { display: none; }
+.over { color: var(--bad); }
+
+/* --- вантаж --- */
+.cargo { flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.cargo[hidden] { display: none; }
+#cargo-none { align-items: center; justify-content: center; }
+.cargo-head { display: flex; align-items: center; gap: 12px; }
+.cargo-name { font-size: clamp(26px, 6vw, 40px); font-weight: 700; }
+.badge { background: var(--accent); color: #000; padding: 2px 10px; border-radius: 6px; font-weight: 700; font-size: 13px; }
+.badge[hidden] { display: none; }
+.route { display: flex; align-items: center; gap: 16px; }
+.route > div:not(.arrow) { flex: 1; min-width: 0; }
+.route .city { font-size: 22px; font-weight: 600; }
+.route .company { color: var(--muted); }
+.arrow { font-size: 28px; color: var(--muted); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px 20px; }
+
+/* --- прилади --- */
+.dash-speed { width: 42%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.speedo { font-size: clamp(80px, 18vw, 150px); font-weight: 800; line-height: 1; }
+.dash-tags { display: flex; gap: 10px; align-items: center; min-height: 64px; }
+.tag { padding: 4px 12px; border-radius: 8px; font-weight: 800; }
+.tag.warn { background: #3a0c0d; color: var(--bad); }
+.tag[hidden] { display: none; }
+.gear { font-size: 44px; font-weight: 800; color: var(--accent); }
+.dash-bars { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; min-width: 0; }
+.bar { height: 14px; background: var(--line); border-radius: 7px; overflow: hidden; margin-top: 6px; }
+.bar > div { height: 100%; width: 0; background: var(--accent); transition: width 0.15s linear; }
+.bar > div.low { background: var(--bad); }
+.truck { color: var(--muted); font-size: 14px; }
+
+/* портретна орієнтація — колонкою */
+@media (orientation: portrait) {
+  .page { flex-direction: column; }
+  .nav-side { width: 100%; max-width: none; flex-direction: row; flex-wrap: wrap; }
+  .dash-speed { width: 100%; }
+}
+
+/* --- підказка про автоблокування --- */
+.wake-hint {
+  position: fixed;
+  inset: auto 16px calc(var(--tabs-h) + env(safe-area-inset-bottom) + 12px) 16px;
+  z-index: 20;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.wake-hint[hidden] { display: none; }
+.wake-hint button {
+  flex: none;
+  background: var(--accent);
+  color: #000;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 700;
+}
+
+/* --- iPhone в альбомній орієнтації: висоти мало, розміри від висоти екрана --- */
+.big, .huge, .speedo, .city, .clock, .speed-small { white-space: nowrap; }
+@media (orientation: landscape) and (max-height: 500px) {
+  :root { --tabs-h: 46px; }
+  .page { padding: 10px 16px; gap: 16px; }
+  .label { font-size: 11px; }
+  .big { font-size: clamp(18px, 7.5vh, 30px); }
+  .huge { font-size: clamp(48px, 24vh, 110px); }
+  .nav-main { gap: 8px; }
+  .dest-city { font-size: clamp(20px, 8vh, 32px); }
+  .dest-company { font-size: 15px; }
+  .limit { width: 22vh; height: 22vh; border-width: 2.4vh; font-size: 8.5vh; }
+  .limit.small { width: 15vh; height: 15vh; border-width: 1.7vh; font-size: 6vh; }
+  .nav-side { gap: 8px; }
+  .speed-small { font-size: clamp(32px, 14vh, 56px); }
+  .clock { font-size: 18px; }
+  .cargo { gap: 10px; }
+  .cargo-name { font-size: clamp(22px, 9vh, 34px); }
+  .route .city { font-size: 18px; }
+  .grid { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px 16px; }
+  .speedo { font-size: clamp(64px, 30vh, 140px); }
+  .dash-tags { min-height: 15vh; }
+  .gear { font-size: 10vh; }
+  .dash-bars { gap: 8px; }
+  .bar { height: 10px; margin-top: 4px; }
+}
+.dash-bars .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* --- карта на вкладці «Навігація» --- */
+.page.page-map { position: relative; padding: 0; display: block; }
+.map { position: absolute; inset: 0; background: var(--bg); }
+.map-empty {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 14px; padding: 20px; text-align: center;
+}
+.map-empty[hidden] { display: none; }
+
+.overlay {
+  position: absolute;
+  z-index: 2;
+  background: rgba(11, 13, 16, 0.82);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.nav-info { top: 10px; left: 10px; max-width: 46%; display: flex; flex-direction: column; gap: 4px; }
+.nav-info .dist { font-size: clamp(30px, 12vh, 54px); font-weight: 800; line-height: 1; white-space: nowrap; }
+.nav-info .row { display: flex; gap: 18px; }
+.nav-info .mid { font-size: clamp(15px, 5.5vh, 22px); font-weight: 600; white-space: nowrap; }
+.nav-info .dest-city { font-size: clamp(16px, 6vh, 24px); }
+.nav-info .dest-company { font-size: 13px; }
+
+.overlay.nav-side {
+  top: 10px; right: 10px;
+  width: auto; max-width: none;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 12px;
+}
+.overlay.nav-side .speed-small { font-size: clamp(28px, 11vh, 46px); }
+.overlay.nav-side .limit { width: 16vh; height: 16vh; min-width: 54px; min-height: 54px; border-width: 1.8vh; font-size: 6.5vh; }
+.overlay.nav-side .clock { font-size: 15px; }
+.overlay.nav-side .rest { font-size: 11px; max-width: 120px; }
+
+.map-buttons {
+  position: absolute; z-index: 2;
+  right: 10px; bottom: 10px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.map-buttons button {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(11, 13, 16, 0.82);
+  color: var(--text);
+  font-size: 22px; font-weight: 700;
+}
+.map-buttons button.active { color: var(--accent); border-color: var(--accent); }
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .map-buttons { flex-direction: row; }
+}
+@media (orientation: portrait) {
+  .nav-info { max-width: calc(100% - 140px); }
+}
+
+.truck-marker, .dest-marker { display: block; }
+.route-status { font-size: 12px; color: var(--accent); max-width: 240px; }
+.route-status[hidden] { display: none; }
+
+/* --- підказка маневру (вгорі по центру карти) --- */
+.maneuver {
+  top: 10px; left: 50%;
+  -webkit-transform: translateX(-50%); transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 16px 8px 10px;
+  min-width: 190px;
+}
+.maneuver[hidden] { display: none; }
+.man-icon { width: 64px; height: 64px; flex: none; color: var(--text); }
+.man-dist { font-size: 30px; font-weight: 800; line-height: 1; white-space: nowrap; }
+.man-text { font-size: 15px; color: var(--muted); white-space: nowrap; }
+.man-then { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.man-then-icon { display: inline-block; width: 18px; height: 18px; vertical-align: middle; }
+.maneuver.soon { background: rgba(30, 90, 50, 0.92); border-color: var(--good); }
+.maneuver.soon .man-text, .maneuver.soon .man-then { color: var(--text); }
+@media (orientation: landscape) and (max-height: 500px) {
+  .man-icon { width: 15vh; height: 15vh; }
+  .man-dist { font-size: 8.5vh; }
+  .man-text { font-size: 4.2vh; }
+}
+@media (orientation: portrait) {
+  .maneuver { top: auto; bottom: 70px; }
+}
+
+/* --- сповіщення: штраф, аварія, доставка --- */
+.alert {
+  position: fixed;
+  z-index: 30;
+  top: 50%; left: 50%;
+  -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%);
+  min-width: 280px; max-width: 90%;
+  padding: 16px 22px;
+  border-radius: 16px;
+  border: 2px solid var(--line);
+  background: var(--panel);
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+.alert[hidden] { display: none; }
+.alert-title { font-size: 28px; font-weight: 800; }
+.alert-text { font-size: 18px; margin-top: 4px; }
+.alert-bad { border-color: var(--bad); background: #2a0a0b; }
+.alert-bad .alert-title { color: var(--bad); }
+.alert-good { border-color: var(--good); background: #0b2414; }
+.alert-good .alert-title { color: var(--good); }
+.alert-info .alert-title { color: var(--accent); }
+
+/* червоний спалах рамки екрана при штрафі чи аварії */
+body.flash::after {
+  content: "";
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+  z-index: 25;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 10px var(--bad);
+  -webkit-animation: flash 1.2s ease-out 2; animation: flash 1.2s ease-out 2;
+  opacity: 0;
+}
+@-webkit-keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }

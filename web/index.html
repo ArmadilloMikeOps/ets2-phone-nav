@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ETS2 Nav">
+<meta name="theme-color" content="#0b0d10">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+<title>ETS2 Phone Nav</title>
+</head>
+<body>
+<div id="status" class="status" hidden></div>
+<div id="alert" class="alert" hidden>
+  <div class="alert-title" id="alert-title"></div>
+  <div class="alert-text" id="alert-text"></div>
+</div>
+
+<main id="pages">
+  <!-- Навігація -->
+  <section class="page page-map" data-page="nav">
+    <div id="map" class="map"></div>
+    <div id="map-empty" class="map-empty" hidden>Немає тайлів карти для цієї гри — див. mapdata/</div>
+
+    <div class="overlay nav-info">
+      <div class="label">До мети</div>
+      <div class="dist"><span id="nav-dist">—</span><small id="nav-dist-unit"></small></div>
+      <div class="row">
+        <div><div class="label">У дорозі</div><div class="mid" id="nav-eta">—</div></div>
+        <div><div class="label">Запас</div><div class="mid" id="nav-margin">—</div></div>
+      </div>
+      <div class="dest-city" id="nav-city">Немає завдання</div>
+      <div class="dest-company" id="nav-company"></div>
+      <div class="route-status" id="nav-route" hidden></div>
+    </div>
+
+    <div class="overlay nav-side">
+      <div class="limit" id="nav-limit" hidden><span id="nav-limit-val"></span></div>
+      <div class="speed-small"><span id="nav-speed">0</span><small id="nav-speed-unit"></small></div>
+      <div class="cruise" id="nav-cruise" hidden></div>
+      <div class="clock" id="nav-clock">—</div>
+      <div class="rest" id="nav-rest"></div>
+    </div>
+
+    <div id="maneuver" class="overlay maneuver" hidden>
+      <div class="man-icon" id="man-icon"></div>
+      <div class="man-body">
+        <div class="man-dist" id="man-dist"></div>
+        <div class="man-text" id="man-text"></div>
+        <div class="man-then" id="man-then"></div>
+      </div>
+    </div>
+
+    <div class="map-buttons">
+      <button id="map-zoom-in" aria-label="Наблизити">+</button>
+      <button id="map-zoom-out" aria-label="Віддалити">−</button>
+      <button id="map-mode" aria-label="Огляд маршруту">⤢</button>
+    </div>
+  </section>
+
+  <!-- Вантаж -->
+  <section class="page" data-page="cargo">
+    <div class="cargo" id="cargo-none">
+      <div class="big muted">Немає завдання</div>
+    </div>
+    <div class="cargo" id="cargo-job" hidden>
+      <div class="cargo-head">
+        <div class="cargo-name" id="cargo-name"></div>
+        <div class="badge" id="cargo-special" hidden>Спецзавдання</div>
+      </div>
+      <div class="route">
+        <div><div class="label">Звідки</div><div class="city" id="cargo-src-city"></div><div class="company" id="cargo-src-company"></div></div>
+        <div class="arrow">→</div>
+        <div><div class="label">Куди</div><div class="city" id="cargo-dst-city"></div><div class="company" id="cargo-dst-company"></div></div>
+      </div>
+      <div class="grid">
+        <div><div class="label">Маса</div><div class="big" id="cargo-mass"></div></div>
+        <div><div class="label">Оплата</div><div class="big" id="cargo-income"></div></div>
+        <div><div class="label">Відстань</div><div class="big" id="cargo-planned"></div></div>
+        <div><div class="label">До дедлайну</div><div class="big" id="cargo-deadline"></div></div>
+        <div><div class="label">Пошкодження</div><div class="big" id="cargo-damage"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Прилади -->
+  <section class="page" data-page="dash">
+    <div class="dash-speed">
+      <div class="speedo"><span id="dash-speed">0</span><small id="dash-speed-unit"></small></div>
+      <div class="dash-tags">
+        <div class="limit small" id="dash-limit" hidden><span id="dash-limit-val"></span></div>
+        <div class="cruise" id="dash-cruise" hidden></div>
+        <div class="tag warn" id="dash-pbrake" hidden>P</div>
+      </div>
+      <div class="gear" id="dash-gear">N</div>
+    </div>
+    <div class="dash-bars">
+      <div class="bar-row">
+        <div class="label">Оберти <span id="dash-rpm"></span></div>
+        <div class="bar"><div id="dash-rpm-bar"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="label">Пальне <span id="dash-fuel"></span></div>
+        <div class="bar"><div id="dash-fuel-bar"></div></div>
+      </div>
+      <div class="grid">
+        <div><div class="label">Запас ходу</div><div class="big" id="dash-range"></div></div>
+        <div><div class="label">Витрата</div><div class="big" id="dash-avg"></div></div>
+        <div><div class="label">Одометр</div><div class="big" id="dash-odo"></div></div>
+        <div><div class="label">Знос (макс)</div><div class="big" id="dash-wear"></div></div>
+      </div>
+      <div class="truck" id="dash-truck"></div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-tab="nav">Навігація</button>
+  <button data-tab="cargo">Вантаж</button>
+  <button data-tab="dash">Прилади</button>
+</nav>
+
+<div id="wake-hint" class="wake-hint" hidden>
+  Щоб екран не гас під час гри: Параметри → Екран і яскравість → Автоблокування → Ніколи.
+  <button id="wake-hint-close">Зрозуміло</button>
+</div>
+
+<script src="vendor/maplibre-gl.js"></script>
+<script src="vendor/pmtiles.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

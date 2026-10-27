@@ -1,0 +1,7 @@
+* text=auto eol=lf
+# Windows-скрипти: CRLF, інакше cmd.exe і старий PowerShell можуть їх неправильно прочитати
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.pmtiles binary
+*.dll binary
+*.dylib binary

@@ -1,0 +1,87 @@
+# Збирає плагін під Windows (MSVC) і macOS, перевіряє, що розкладка спільної пам'яті
+# однакова на обох системах і збігається з companion/layout.json.
+# На тег v* — публікує реліз з архівами для Windows і macOS.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write # для створення релізу
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Збірка (MSVC x64)
+        run: |
+          cmake -S plugin -B plugin/build-cmake -A x64
+          cmake --build plugin/build-cmake --config Release
+      - name: Розкладка MSVC == companion/layout.json
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem plugin/build-cmake -Recurse -Filter layout_dump.exe | Select-Object -First 1
+          & $exe.FullName | Out-File -Encoding utf8NoBOM msvc-layout.json
+          $a = Get-Content msvc-layout.json -Raw | ConvertFrom-Json | ConvertTo-Json -Depth 5
+          $b = Get-Content companion/layout.json -Raw | ConvertFrom-Json | ConvertTo-Json -Depth 5
+          if ($a -ne $b) { Write-Error "layout.json розходиться з MSVC-збіркою"; exit 1 }
+      - name: Експорти DLL
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC" -Recurse -Filter dumpbin.exe | Where-Object { $_.FullName -like '*Hostx64\x64*' } | Select-Object -First 1
+          $exports = & $dumpbin.FullName /exports plugin/build/ets2-phone-nav.dll | Out-String
+          Write-Host $exports
+          if ($exports -notmatch 'scs_telemetry_init' -or $exports -notmatch 'scs_telemetry_shutdown') { exit 1 }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ets2-phone-nav-windows
+          path: plugin/build/ets2-phone-nav.dll
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Збірка (x86_64) і розкладка
+        run: |
+          make -C plugin mac
+          make -C plugin -B layout
+          git diff --exit-code companion/layout.json
+      - name: Крос-збірка під Windows (mingw-w64) — друга перевірка коду
+        run: |
+          brew install mingw-w64
+          make -C plugin windows
+          mv plugin/build/ets2-phone-nav.dll plugin/build/ets2-phone-nav-mingw.dll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ets2-phone-nav-macos
+          path: plugin/build/ets2-phone-nav.dylib
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+      - name: Архіви
+        run: |
+          set -e
+          mkdir -p dist
+          for os in windows macos; do
+            d="ets2-phone-nav-${GITHUB_REF_NAME}-$os"
+            git archive --format=tar --prefix="$d/" HEAD | tar -x -C dist
+            mkdir -p "dist/$d/plugin/build"
+            cp ets2-phone-nav-$os/* "dist/$d/plugin/build/"
+            (cd dist && zip -qr "$d.zip" "$d")
+          done
+          ls -la dist
+      - name: Реліз
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip --title "ETS2 Phone Nav $GITHUB_REF_NAME" --generate-notes

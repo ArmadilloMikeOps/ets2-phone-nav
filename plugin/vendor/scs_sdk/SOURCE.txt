@@ -1,0 +1,1 @@
+SCS SDK 1.16, https://download.eurotrucksimulator2.com/scs_sdk_1_16.zip, sha256 49821e25568f4d7e462135f577f8fef2ab197326404f2c1daef139b8f3dc5e69, завантажено 2026-10-26

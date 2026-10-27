@@ -1,0 +1,13 @@
+# збірка плагіна (готові файли — у релізах GitHub)
+plugin/build/
+plugin/build-cmake/
+
+# похідні від файлів гри — не публікуємо (див. README, розділ «Права»)
+mapdata/out/
+
+# клон truckermudgeon/maps, який робить scripts/setup-mapdata.sh
+.trucksim-maps/
+
+node_modules/
+.logs/
+.DS_Store

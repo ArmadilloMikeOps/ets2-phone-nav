@@ -1,0 +1,6 @@
+{
+  "name": "ets2-phone-nav-router",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-or-later"
+}
