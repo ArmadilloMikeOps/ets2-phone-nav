@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const UA = "ets2-phone-nav (https://github.com/godamisha-ops/ets2-phone-nav)";
+const UA = "ets2-phone-nav (https://github.com/ArmadilloMikeOps/ets2-phone-nav)";
 const PREFIX: Record<string, string> = { eut2: "europe", ats: "usa" };
 
 type Entry = { file: string | null; at: number };
