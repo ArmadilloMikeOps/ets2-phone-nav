@@ -24,6 +24,8 @@ for dir in "${GAMES[@]}"; do
 		[ -f "$DYLIB" ] || { echo "немає $DYLIB — спершу make у plugin/"; exit 1; }
 		mkdir -p "$dir/plugins"
 		cp "$DYLIB" "$dir/plugins/ets2-phone-nav.dylib"
+		# плагін з архіву релізу macOS позначає «завантаженим з інтернету» — знімаємо карантин
+		xattr -d com.apple.quarantine "$dir/plugins/ets2-phone-nav.dylib" 2>/dev/null || true
 		echo "installed: $dir/plugins/ets2-phone-nav.dylib"
 	fi
 done
