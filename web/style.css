@@ -39,19 +39,17 @@ small { font-size: 0.35em; color: var(--muted); margin-left: 0.25em; font-weight
 .good { color: var(--good); }
 .bad { color: var(--bad); }
 
-/* --- сторінки: горизонтальна стрічка, гортається свайпом --- */
+/* --- сторінки: горизонтальна стрічка; гортається лише кнопками вкладок (свайп забрала карта) --- */
 #pages {
   display: flex;
   height: calc(100% - var(--tabs-h) - env(safe-area-inset-bottom));
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
+  overflow: hidden;
   scrollbar-width: none;
 }
 #pages::-webkit-scrollbar { display: none; }
 .page {
   flex: 0 0 100%;
   height: 100%;
-  scroll-snap-align: start;
   padding: 16px 20px;
   display: flex;
   gap: 20px;
@@ -403,3 +401,6 @@ body.flash::after {
 @media (orientation: landscape) {
   .maneuver { top: auto; bottom: 10px; left: 10px; transform: none; -webkit-transform: none; }
 }
+
+.map-buttons button[hidden] { display: none; }
+#map-recenter { color: var(--accent); }

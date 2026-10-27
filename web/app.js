@@ -94,10 +94,6 @@ import { initDraggable } from "./drag.js";
   tabs.forEach(function (b) {
     b.addEventListener("click", function () { goTo(b.getAttribute("data-tab")); });
   });
-  pages.addEventListener("scroll", function () {
-    var i = Math.round(pages.scrollLeft / pages.clientWidth);
-    if (tabs[i] && !tabs[i].classList.contains("active")) markTab(i);
-  });
   window.addEventListener("resize", function () { goTo(storageGet("tab") || "nav"); });
   goTo(storageGet("tab") || "nav");
 
@@ -282,6 +278,7 @@ import { initDraggable } from "./drag.js";
 
     // --- навігація ---
     var mapShown = updateMap($("map"), d, s.tiles || []);
+    syncMapButtons();
     show("map-empty", !mapShown);
 
     var routeText = {
@@ -396,9 +393,19 @@ import { initDraggable } from "./drag.js";
   $("map-zoom-in").addEventListener("click", function () { zoomBy(1); });
   $("map-zoom-out").addEventListener("click", function () { zoomBy(-1); });
   $("map-mode").addEventListener("click", function () {
-    setMode(getMode() === "follow" ? "overview" : "follow");
-    toggleClass($("map-mode"), "active", getMode() === "overview");
+    setMode(getMode() === "overview" ? "follow" : "overview");
+    syncMapButtons();
   });
+  $("map-recenter").addEventListener("click", function () {
+    setMode("follow");
+    syncMapButtons();
+  });
+  // режим змінюється й сам (дотик до карти, автоповернення) — звіряємо кнопки з кожним кадром стану
+  function syncMapButtons() {
+    var m = getMode();
+    toggleClass($("map-mode"), "active", m === "overview");
+    $("map-recenter").hidden = m === "follow";
+  }
 
   // ---------- зв'язок ----------
 

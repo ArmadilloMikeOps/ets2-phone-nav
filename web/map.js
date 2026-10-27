@@ -4,9 +4,11 @@
 //   follow   — вантажівка в нижній частині екрана, карта повернута за курсом,
 //              масштаб залежить від швидкості (+/− зсувають його).
 //   overview — північ угорі, видно вантажівку й точку призначення разом.
+//   free     — користувач рухає карту пальцем: камера не стежить за вантажівкою;
+//              кнопка ◎ або 20 с без дотиків — плавне повернення до follow.
 //
-// Карта навмисно неінтерактивна (без перетягування): свайп по ній гортає вкладки,
-// а за кермом потрібні лише кнопки.
+// Карту можна тягнути й масштабувати щипком; обертання й нахил вимкнені, щоб за кермом
+// карта випадково не перекрутилась. Вкладки свайпом не гортаються (лише кнопками внизу).
 
 import { buildStyle } from "./map-style.js";
 import { toLngLat, headingToBearing } from "./projection.js";
@@ -21,6 +23,8 @@ let truckMarker = null;
 let destMarker = null;
 let mode = "follow";
 let zoomOffset = 0;
+let lastInteraction = 0;
+const AUTO_FOLLOW_MS = 20_000;
 
 // ціль камери оновлюється з кожним кадром телеметрії, а реальна камера плавно до неї тягнеться
 const target = { lng: 0, lat: 0, bearing: 0, zoom: 12, speedKmh: 0, valid: false };
@@ -99,13 +103,41 @@ function createMap(container, game, hasWorld) {
     style: buildStyle(game, TILES_BASE, hasWorld),
     center: [10, 50],
     zoom: 5,
-    interactive: false,
+    interactive: true,
+    dragRotate: false,
+    pitchWithRotate: false,
+    keyboard: false,
+    boxZoom: false,
     attributionControl: false,
     fadeDuration: 0,
   });
   currentGame = game;
   window.__navMap = map; // для налагодження з консолі
   map.on("style.load", addRouteLayers); // і після setStyle при зміні гри
+  map.touchZoomRotate.disableRotation();
+  map.touchPitch.disable();
+  // Дотик до карти — одразу вільний режим. Чекати dragstart не можна: камера стеження щокадру
+  // кличе jumpTo, а він у MapLibre скасовує жест, що тільки почався, — перетягування обривалось би.
+  // Якщо це був просто дотик без руху — повертаємось до стеження.
+  const box = map.getCanvasContainer();
+  let tap = null; // { x, y, wasFollow }
+  box.addEventListener("pointerdown", (e) => {
+    tap = { x: e.clientX, y: e.clientY, wasFollow: mode === "follow" };
+    lastInteraction = Date.now();
+    mode = "free";
+  }, true);
+  box.addEventListener("pointermove", (e) => {
+    if (tap && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 6) tap = null;
+  }, true);
+  window.addEventListener("pointerup", () => {
+    if (tap && tap.wasFollow) resumeFollow(); // дотик без руху — нічого не рушили
+    tap = null;
+  }, true);
+  box.addEventListener("wheel", () => { lastInteraction = Date.now(); mode = "free"; }, { passive: true, capture: true });
+  // поки палець рухає карту — відкладаємо автоповернення до стеження
+  for (const ev of ["drag", "zoom", "dragend", "zoomend"]) {
+    map.on(ev, (e) => { if (e.originalEvent) lastInteraction = Date.now(); });
+  }
 
   truckMarker = new maplibregl.Marker({
     element: el(`<svg class="truck-marker" viewBox="0 0 40 40" width="40" height="40">
@@ -137,6 +169,7 @@ function shortestAngle(from, to) {
 
 function tick() {
   requestAnimationFrame(tick);
+  if (mode === "free" && Date.now() - lastInteraction > AUTO_FOLLOW_MS) resumeFollow();
   if (!map || !target.valid || mode !== "follow") return;
 
   const k = cam.init ? 0.15 : 1;
@@ -178,10 +211,18 @@ function overview() {
   map.fitBounds(b, { padding, bearing: 0, maxZoom: 13, duration: 600 });
 }
 
+// плавне повернення до вантажівки з того місця, куди користувач відсунув карту
+function resumeFollow() {
+  mode = "follow";
+  if (!map) return;
+  const c = map.getCenter();
+  Object.assign(cam, { lng: c.lng, lat: c.lat, bearing: map.getBearing(), zoom: map.getZoom(), init: true });
+}
+
 export function setMode(m) {
+  if (m === "follow") return resumeFollow();
   mode = m;
   if (mode === "overview") overview();
-  else cam.init = false;
 }
 
 export function getMode() {
@@ -192,6 +233,7 @@ export function zoomBy(delta) {
   if (mode === "follow") {
     zoomOffset = Math.max(-6, Math.min(4, zoomOffset + delta));
   } else if (map) {
+    if (mode === "free") lastInteraction = Date.now();
     map.zoomTo(map.getZoom() + delta, { duration: 250 });
   }
 }
