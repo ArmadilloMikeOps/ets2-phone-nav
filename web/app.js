@@ -94,6 +94,12 @@ import { initDraggable } from "./drag.js";
   tabs.forEach(function (b) {
     b.addEventListener("click", function () { goTo(b.getAttribute("data-tab")); });
   });
+  // параметри адреси: #nav / #cargo / #dash — відкрити вкладку; ?view=overview — огляд маршруту;
+  // ?zoom=-1.5 — зсув масштабу стеження; ?screenshot — без підказок першого запуску (для скриншотів)
+  var params = new URLSearchParams(location.search);
+  var hashTab = location.hash.slice(1);
+  if (order.indexOf(hashTab) >= 0) storageSet("tab", hashTab);
+  var shotMode = params.has("screenshot");
   window.addEventListener("resize", function () { goTo(storageGet("tab") || "nav"); });
   goTo(storageGet("tab") || "nav");
 
@@ -263,6 +269,9 @@ import { initDraggable } from "./drag.js";
     }
   }
 
+  var overviewApplied = false;
+  var zoomApplied = false;
+
   // ---------- рендер ----------
 
   function render(s) {
@@ -286,6 +295,14 @@ import { initDraggable } from "./drag.js";
 
     // --- навігація ---
     var mapShown = updateMap($("map"), d, s.tiles || []);
+    if (params.get("zoom") && !zoomApplied) {
+      zoomApplied = true;
+      zoomBy(Number(params.get("zoom")) || 0);
+    }
+    if (params.get("view") === "overview" && d.route_id && !overviewApplied) {
+      overviewApplied = true;
+      setTimeout(function () { setMode("overview"); syncMapButtons(); }, 1500); // маршрут має встигнути завантажитись
+    }
     syncMapButtons();
     show("map-empty", !mapShown);
 
@@ -393,7 +410,7 @@ import { initDraggable } from "./drag.js";
     maneuver: $("maneuver"),
     buttons: document.querySelector(".map-buttons")
   });
-  if (storageGet("panels-hint") !== "seen") {
+  if (!shotMode && storageGet("panels-hint") !== "seen") {
     setTimeout(function () {
       showAlert({ kind: "info", title: "Панелі можна пересувати", text: "Перетягніть пальцем; подвійний дотик повертає на місце" });
       storageSet("panels-hint", "seen");
@@ -435,7 +452,7 @@ import { initDraggable } from "./drag.js";
     if (document.visibilityState === "visible") keepAwake(function () {});
   });
   keepAwake(function (ok) {
-    if (!ok && storageGet("wake-hint") !== "seen") show("wake-hint", true);
+    if (!ok && !shotMode && storageGet("wake-hint") !== "seen") show("wake-hint", true);
   });
   $("wake-hint-close").addEventListener("click", function () {
     show("wake-hint", false);

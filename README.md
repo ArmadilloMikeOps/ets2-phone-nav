@@ -11,6 +11,15 @@ destination, turn-by-turn hints, speed limit, cruise control, cargo info and ale
 macOS is tested; Windows builds but is untested in-game. See [docs/MACOS.md](docs/MACOS.md) and
 [docs/WINDOWS.md](docs/WINDOWS.md).*
 
+<p align="center">
+  <img src="docs/screenshots/nav.png" width="49%" alt="Навігація: маршрут, підказка повороту, поворотник">
+  <img src="docs/screenshots/overview.png" width="49%" alt="Огляд маршруту Будапешт → Реймс">
+  <img src="docs/screenshots/cargo.png" width="49%" alt="Вантаж: герби міст, гаманець і кредит">
+  <img src="docs/screenshots/ats-overview.png" width="49%" alt="ATS: Лос-Анджелес → Лас-Вегас">
+</p>
+
+*Скриншоти — iPhone 17 Pro в альбомній орієнтації; дані з імітатора `scripts/fake_shm.py`, гаманець — зі справжнього збереження.*
+
 ## Що вміє
 
 - **Навігація:** карта світу гри з вашою вантажівкою (карта повертається за курсом, масштаб — від швидкості),

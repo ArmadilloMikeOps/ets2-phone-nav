@@ -11,7 +11,8 @@
             платна дорога (50 с), далі по колу
   --fast N  прискорення руху вздовж маршруту (за замовчуванням 8×, щоб маневри йшли частіше)
   --game ats  рейс Лос-Анджелес → Лас-Вегас замість Будапешт → Реймс
-Поворотники вмикаються за розкладом кожні 30 с: лівий (0–6 с), правий (10–16 с), аварійка (20–24 с).
+Поворотники вмикаються за розкладом кожні 30 с: лівий (0–6 с), правий (10–16 с), аварійка (20–24 с);
+  --blink none|left|right|hazard  замість розкладу — фіксований стан (для скриншотів).
 
 За замовчуванням пише в /tmp/ets2-phone-nav-fake.shm, а не у файл гри:
 обрізати файл, який гра тримає через mmap, означає покласти гру (SIGBUS).
@@ -55,9 +56,11 @@ def put(name, value):
 # рейс для кожної гри: старт (x, z), звідки й куди (токени — як у mapdata)
 TRIP = {
     "eut2": dict(start=(28320.0, 17146.6), src=("budapest", "posped", "Budapest", "Posped"),
-                 dst=("reims", "kaarfor", "Reims", "Kaarfor"), brand=("Scania", "S 2024e")),
+                 dst=("reims", "kaarfor", "Reims", "Kaarfor"), brand=("Scania", "S 2024e"),
+                 nav_m=1_347_028.0, planned_km=1452, cargo="Мед", mass=18400.0),
     "ats": dict(start=(-99698.0, 16701.0), src=("los_angeles", "ent_whs", "Los Angeles", "Ent Warehouse"),
-                dst=("las_vegas", "pho_oil_gst", "Las Vegas", "Phoenix Oil"), brand=("Peterbilt", "579")),
+                dst=("las_vegas", "pho_oil_gst", "Las Vegas", "Phoenix Oil"), brand=("Peterbilt", "579"),
+                nav_m=434_000.0, planned_km=441, cargo="Будівельні матеріали", mass=19800.0),
 }[game]
 START = TRIP["start"]
 static = {
@@ -71,10 +74,10 @@ static = {
     "truck_brand": TRIP["brand"][0], "truck_name": TRIP["brand"][1],
     "job_active": 1,
     "job_income": 48210,
-    "job_planned_km": 1452,
-    "job_cargo_mass": 18400.0,
+    "job_planned_km": TRIP["planned_km"],
+    "job_cargo_mass": TRIP["mass"],
     "job_cargo_units": 1,
-    "job_cargo": "Мед",
+    "job_cargo": TRIP["cargo"],
     "job_src_city": TRIP["src"][2], "job_src_company": TRIP["src"][3],
     "job_dst_city": TRIP["dst"][2], "job_dst_company": TRIP["dst"][3],
     "job_src_city_id": TRIP["src"][0], "job_src_company_id": TRIP["src"][1],
@@ -151,7 +154,7 @@ def fire(event_id, amount, detail="", xp=0):
 seq = 0
 t0 = time.time()
 game_time0 = 3 * 1440 + 14 * 60 + 25  # Чт 14:25
-nav0 = 1_347_028.0
+nav0 = TRIP["nav_m"]
 next_event = 20.0
 
 with open(PATH, "wb") as fh:
@@ -173,10 +176,11 @@ while True:
     put("fuel_range", 1180.0 - t * 0.15)
     put("fuel_warning", 0)
     put("parking_brake", 0)
+    blink = arg("--blink")
     phase = t % 30
-    put("blinker_left", 1 if phase < 6 else 0)
-    put("blinker_right", 1 if 10 <= phase < 16 else 0)
-    put("hazard", 1 if 20 <= phase < 24 else 0)
+    put("blinker_left", 1 if (blink == "left" if blink else phase < 6) else 0)
+    put("blinker_right", 1 if (blink == "right" if blink else 10 <= phase < 16) else 0)
+    put("hazard", 1 if (blink == "hazard" if blink else 20 <= phase < 24) else 0)
     put("nav_distance", max(0.0, nav0 - t * speed * 19))
     put("nav_time", max(0.0, (nav0 - t * speed * 19) / 19.3))
     put("nav_speed_limit", 22.22 if int(t / 15) % 2 == 0 else 19.44)

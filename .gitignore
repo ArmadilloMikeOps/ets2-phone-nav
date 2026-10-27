@@ -11,3 +11,6 @@ mapdata/out/
 node_modules/
 .logs/
 .DS_Store
+
+# тексти постів для соцмереж
+promo/
