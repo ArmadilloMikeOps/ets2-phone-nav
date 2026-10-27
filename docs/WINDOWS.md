@@ -100,6 +100,8 @@ bash scripts/setup-mapdata.sh
 bash scripts/setup-mapdata.sh --game-dir "/mnt/d/SteamLibrary/steamapps/common/Euro Truck Simulator 2"
 ```
 
+Для **ATS** — те саме з `--game ats` (дані лягають поруч, сервер сам бере потрібні за запущеною грою).
+
 Повторюйте після оновлення гри або купівлі нового DLC з картою.
 
 ## 5. Запуск

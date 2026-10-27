@@ -404,3 +404,22 @@ body.flash::after {
 
 .map-buttons button[hidden] { display: none; }
 #map-recenter { color: var(--accent); }
+
+/* --- поворотники: зелене блимання країв екрана (ритм приблизно як у грі) --- */
+.blinker {
+  position: fixed;
+  top: 0; bottom: 0;
+  width: calc(28px + env(safe-area-inset-left));
+  z-index: 40;
+  pointer-events: none;
+  -webkit-animation: blink 0.72s infinite; animation: blink 0.72s infinite;
+}
+.blinker[hidden] { display: none; }
+.blinker-left { left: 0; background: linear-gradient(to right, rgba(61, 220, 132, 0.95), rgba(61, 220, 132, 0.35) 45%, transparent); }
+.blinker-right {
+  right: 0;
+  width: calc(28px + env(safe-area-inset-right));
+  background: linear-gradient(to left, rgba(61, 220, 132, 0.95), rgba(61, 220, 132, 0.35) 45%, transparent);
+}
+@-webkit-keyframes blink { 0%, 45% { opacity: 1; } 55%, 100% { opacity: 0; } }
+@keyframes blink { 0%, 45% { opacity: 1; } 55%, 100% { opacity: 0; } }

@@ -19,7 +19,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TSM_REPO="https://github.com/truckermudgeon/maps.git"
 TSM_COMMIT="$(cat "$ROOT/mapdata/patches/trucksim-maps-BASE.txt")"
-PATCH="$ROOT/mapdata/patches/trucksim-maps-ets2-1.61.patch"
+PATCH="$ROOT/mapdata/patches/trucksim-maps-1.61.patch"
 
 is_wsl() { grep -qi microsoft /proc/version 2>/dev/null; }
 
@@ -92,10 +92,12 @@ if [ "$(git -C "$DEPS" rev-parse HEAD)" != "$TSM_COMMIT" ]; then
 fi
 git -C "$DEPS" submodule update --init --depth 1 packages/clis/parser/gdeflate/libdeflate
 if git -C "$DEPS" apply --reverse --check "$PATCH" 2>/dev/null; then
-	echo "патч для ETS2 1.61 уже накладено"
+	echo "патч для 1.61 уже накладено"
 else
+	# клон наш: скидаємо парсер до чистого стану (там міг лишитися старіший варіант патча) і накладаємо заново
+	git -C "$DEPS" checkout --quiet -- packages/clis/parser
 	git -C "$DEPS" apply "$PATCH"
-	echo "наклав патч для ETS2 1.61"
+	echo "наклав патч для 1.61"
 fi
 
 # --ignore-scripts: кореневий prepare (husky) нам не потрібен і падає поза git-хуками

@@ -10,6 +10,8 @@
   --events  за розкладом підкидати події: штраф (20 с), аварія + штраф за зіткнення (35 с),
             платна дорога (50 с), далі по колу
   --fast N  прискорення руху вздовж маршруту (за замовчуванням 8×, щоб маневри йшли частіше)
+  --game ats  рейс Лос-Анджелес → Лас-Вегас замість Будапешт → Реймс
+Поворотники вмикаються за розкладом кожні 30 с: лівий (0–6 с), правий (10–16 с), аварійка (20–24 с).
 
 За замовчуванням пише в /tmp/ets2-phone-nav-fake.shm, а не у файл гри:
 обрізати файл, який гра тримає через mmap, означає покласти гру (SIGBUS).
@@ -50,7 +52,14 @@ def put(name, value):
         struct.pack_into(FMT[f["type"]], buf, f["offset"], value)
 
 
-START = (28320.0, 17146.6)
+# рейс для кожної гри: старт (x, z), звідки й куди (токени — як у mapdata)
+TRIP = {
+    "eut2": dict(start=(28320.0, 17146.6), src=("budapest", "posped", "Budapest", "Posped"),
+                 dst=("reims", "kaarfor", "Reims", "Kaarfor"), brand=("Scania", "S 2024e")),
+    "ats": dict(start=(-99698.0, 16701.0), src=("los_angeles", "ent_whs", "Los Angeles", "Ent Warehouse"),
+                dst=("las_vegas", "pho_oil_gst", "Las Vegas", "Phoenix Oil"), brand=("Peterbilt", "579")),
+}[game]
+START = TRIP["start"]
 static = {
     "game_id": game,
     "game_name": "Euro Truck Simulator 2 (fake)" if game == "eut2" else "American Truck Simulator (fake)",
@@ -59,17 +68,17 @@ static = {
     "fuel_capacity": 800.0,
     "fuel_avg": 0.32,
     "odometer": 48213.0,
-    "truck_brand": "Scania", "truck_name": "S 2024e",
+    "truck_brand": TRIP["brand"][0], "truck_name": TRIP["brand"][1],
     "job_active": 1,
     "job_income": 48210,
     "job_planned_km": 1452,
     "job_cargo_mass": 18400.0,
     "job_cargo_units": 1,
     "job_cargo": "Мед",
-    "job_src_city": "Budapest", "job_src_company": "Posped",
-    "job_dst_city": "Reims", "job_dst_company": "Kaarfor",
-    "job_src_city_id": "budapest", "job_src_company_id": "posped",
-    "job_dst_city_id": "reims", "job_dst_company_id": "kaarfor",
+    "job_src_city": TRIP["src"][2], "job_src_company": TRIP["src"][3],
+    "job_dst_city": TRIP["dst"][2], "job_dst_company": TRIP["dst"][3],
+    "job_src_city_id": TRIP["src"][0], "job_src_company_id": TRIP["src"][1],
+    "job_dst_city_id": TRIP["dst"][0], "job_dst_company_id": TRIP["dst"][1],
 }
 for k, v in static.items():
     put(k, v)
@@ -91,7 +100,7 @@ path = None  # [(x, z), ...] у світі гри
 if FOLLOW_ROUTE:
     req = json.dumps({
         "game": game, "x": START[0], "y": 0, "z": START[1], "heading": heading_of(-20, -6),
-        "dstCityId": "reims", "dstCompanyId": "kaarfor", "withXY": True,
+        "dstCityId": TRIP["dst"][0], "dstCompanyId": TRIP["dst"][1], "withXY": True,
     }).encode()
     with urllib.request.urlopen(urllib.request.Request("http://127.0.0.1:8430/route", data=req), timeout=60) as r:
         res = json.load(r)
@@ -164,6 +173,10 @@ while True:
     put("fuel_range", 1180.0 - t * 0.15)
     put("fuel_warning", 0)
     put("parking_brake", 0)
+    phase = t % 30
+    put("blinker_left", 1 if phase < 6 else 0)
+    put("blinker_right", 1 if 10 <= phase < 16 else 0)
+    put("hazard", 1 if 20 <= phase < 24 else 0)
     put("nav_distance", max(0.0, nav0 - t * speed * 19))
     put("nav_time", max(0.0, (nav0 - t * speed * 19) / 19.3))
     put("nav_speed_limit", 22.22 if int(t / 15) % 2 == 0 else 19.44)

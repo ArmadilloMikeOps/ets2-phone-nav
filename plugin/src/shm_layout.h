@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 #define TRUCKNAV_MAGIC   0x564E4B54u   // "TKNV"
-#define TRUCKNAV_VERSION 3u
+#define TRUCKNAV_VERSION 4u
 
 // X(тип у C, ім'я, тип у JS) — скаляр; S(ім'я, довжина) — рядок UTF-8 з нулем у кінці
 #define TRUCKNAV_FIELDS(X, S) \
@@ -40,6 +40,9 @@
 	X(float,    fuel_avg,             f32)  /* л/км */ \
 	X(uint32_t, fuel_warning,         u32) \
 	X(uint32_t, parking_brake,        u32) \
+	X(uint32_t, blinker_left,         u32)  /* поворотник увімкнено (а не «лампа зараз світить») */ \
+	X(uint32_t, blinker_right,        u32) \
+	X(uint32_t, hazard,               u32)  /* аварійка */ \
 	X(float,    odometer,             f32)  /* км */ \
 	X(float,    wear_engine,          f32)  /* 0..1 */ \
 	X(float,    wear_transmission,    f32) \

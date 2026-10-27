@@ -10,7 +10,8 @@ const UA = "ets2-phone-nav (https://github.com/ArmadilloMikeOps/ets2-phone-nav)"
 const PREFIX: Record<string, string> = { eut2: "europe", ats: "usa" };
 
 type Entry = { file: string | null; at: number };
-type GameCache = { path: string; entries: Record<string, Entry>; cities: Map<string, { name: string; country: string }> | null };
+type City = { name: string; country: string; state?: string };
+type GameCache = { path: string; entries: Record<string, Entry>; cities: Map<string, City> | null };
 
 // токен країни гри → елемент Wikidata. Поле `code` у даних гри — міжнародний автомобільний код
 // (F, H, D…), а не ISO, тож зіставляємо самі; таблицю звірено з мітками Wikidata.
@@ -42,10 +43,17 @@ function gameCache(mapdata: string, game: string): GameCache | null {
 		const dir = join(mapdata, game === "ats" ? "ats" : "ets2");
 		const citiesFile = join(dir, `${prefix}-cities.json`);
 		if (!existsSync(citiesFile)) return c;
+		// ATS: «країни» гри — штати; їхні коди (CA, NV…) — суфікси ISO 3166-2, шукаємо місто в межах штату
+		const stateCode = new Map<string, string>();
+		const countriesFile = join(dir, `${prefix}-countries.json`);
+		if (game === "ats" && existsSync(countriesFile)) {
+			for (const k of JSON.parse(readFileSync(countriesFile, "utf8"))) stateCode.set(k.token, k.code);
+		}
 		c.cities = new Map();
 		for (const city of JSON.parse(readFileSync(citiesFile, "utf8"))) {
-			// ATS: «країна» — штат; шукаємо в межах США
-			c.cities.set(city.token, { name: city.name, country: game === "ats" ? "Q30" : COUNTRY_QID[city.countryToken] ?? "" });
+			c.cities.set(city.token, game === "ats"
+				? { name: city.name, country: "Q30", state: stateCode.get(city.countryToken) }
+				: { name: city.name, country: COUNTRY_QID[city.countryToken] ?? "" });
 		}
 	}
 	return c;
@@ -54,12 +62,22 @@ function gameCache(mapdata: string, game: string): GameCache | null {
 const thumb = (file: string) =>
 	`https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=128`;
 
-async function queryWikidata(name: string, country: string): Promise<string | null> {
-	const q = `SELECT ?coa WHERE {
-		SERVICE wikibase:mwapi { bd:serviceParam wikibase:endpoint "www.wikidata.org"; wikibase:api "EntitySearch";
-			mwapi:search "${name.replace(/["\\]/g, "")}"; mwapi:language "en". ?item wikibase:apiOutputItem mwapi:item.
-			?ord wikibase:apiOrdinal true. }
-		?item wdt:P17 wd:${country}; wdt:P94 ?coa.
+// Європа: герб (P94). США: у міст рідко бувають герби — беремо герб, інакше печатку (P158), інакше прапор (P41),
+// і шукаємо в межах штату (P131* → P300 «US-CA»), бо однакових назв міст у США багато.
+async function queryWikidata(city: City): Promise<string | null> {
+	const search = `SERVICE wikibase:mwapi { bd:serviceParam wikibase:endpoint "www.wikidata.org"; wikibase:api "EntitySearch";
+			mwapi:search "${city.name.replace(/["\\]/g, "")}"; mwapi:language "en". ?item wikibase:apiOutputItem mwapi:item.
+			?ord wikibase:apiOrdinal true. }`;
+	const q = city.state
+		? `SELECT ?coa ?seal ?flag WHERE {
+		${search}
+		?item wdt:P17 wd:${city.country}; wdt:P131* ?st. ?st wdt:P300 "US-${city.state}".
+		OPTIONAL { ?item wdt:P94 ?coa } OPTIONAL { ?item wdt:P158 ?seal } OPTIONAL { ?item wdt:P41 ?flag }
+		FILTER(BOUND(?coa) || BOUND(?seal) || BOUND(?flag))
+	} ORDER BY ?ord LIMIT 1`
+		: `SELECT ?coa WHERE {
+		${search}
+		?item wdt:P17 wd:${city.country}; wdt:P94 ?coa.
 	} ORDER BY ?ord LIMIT 1`;
 	const res = await fetch("https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(q), {
 		headers: { "User-Agent": UA, Accept: "application/sparql-results+json" },
@@ -67,7 +85,8 @@ async function queryWikidata(name: string, country: string): Promise<string | nu
 	});
 	if (!res.ok) throw new Error(`Wikidata ${res.status}`);
 	const b = (await res.json()).results.bindings[0];
-	return b ? decodeURIComponent(String(b.coa.value).split("/").pop()!) : null;
+	const img = b && (b.coa ?? b.seal ?? b.flag);
+	return img ? decodeURIComponent(String(img.value).split("/").pop()!) : null;
 }
 
 /** URL мініатюри герба або null (немає в Wikidata / немає інтернету / невідоме місто) */
@@ -83,7 +102,7 @@ export async function coatOfArms(mapdata: string, game: string, cityToken: strin
 	if (!inflight.has(key)) {
 		inflight.set(key, (async () => {
 			try {
-				const file = await queryWikidata(city.name, city.country);
+				const file = await queryWikidata(city);
 				c.entries[cityToken] = { file, at: Date.now() }; // промах теж кешуємо
 				writeFileSync(c.path, JSON.stringify(c.entries, null, 1));
 				return file;

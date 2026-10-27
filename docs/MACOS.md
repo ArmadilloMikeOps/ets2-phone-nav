@@ -45,6 +45,8 @@ scripts/setup-mapdata.sh
 `mapdata/out/ets2/` (~300 МБ: дані карти, граф доріг) і `mapdata/out/tiles/` (~30 МБ тайлів).
 Якщо гра не в стандартній теці Steam: `--game-dir "…/steamapps/common/Euro Truck Simulator 2"`.
 
+Для **ATS** — те саме з `--game ats` (дані лягають поруч, сервер сам бере потрібні за запущеною грою).
+
 Повторюйте після оновлення гри або купівлі нового DLC з картою.
 
 ## 5. Запуск

@@ -240,12 +240,20 @@ import { initDraggable } from "./drag.js";
     var t = new Date(ms);
     return pad2(t.getHours()) + ":" + pad2(t.getMinutes());
   }
+  // гра пише автозбереження приблизно раз на 5 хв їзди — показуємо, наскільки свіжі цифри
+  function ago(ms) {
+    var min = Math.max(0, Math.round((Date.now() - ms) / 60000));
+    if (min < 1) return "щойно";
+    if (min < 60) return min + " хв тому";
+    var h = Math.floor(min / 60);
+    return h < 24 ? h + " год тому" : Math.floor(h / 24) + " д тому";
+  }
   function renderFinance(w) {
     show("finance", !!w && w.money !== undefined);
     if (!w || w.money === undefined) return;
     set("fin-money", (w.adjusted ? "≈ " : "") + fmtInt(w.money) + " " + U.money);
     $("fin-money").className = "big " + (w.money < 0 ? "bad" : "");
-    set("fin-money-sub", "збереження о " + savedAt(w.saved_at) + (w.adjusted ? " + події після нього" : ""));
+    set("fin-money-sub", "збереження " + ago(w.saved_at) + " (" + savedAt(w.saved_at) + ")" + (w.adjusted ? " + події після нього" : ""));
     if (w.loans > 0) {
       set("fin-loan", fmtInt(w.loan) + " " + U.money);
       set("fin-loan-sub", "з " + fmtInt(w.loan_original) + " " + U.money + " · ліміт " + fmtInt(w.loan_limit) + " " + U.money);
@@ -338,6 +346,10 @@ import { initDraggable } from "./drag.js";
       setCoat("cargo-dst-coa", d.game_id, d.job_dst_city_id);
     }
     renderFinance(d.wallet);
+
+    // --- поворотники: зелене блимання країв екрана (аварійка — обидва) ---
+    show("blinker-left", !!(d.blinker_left || d.hazard));
+    show("blinker-right", !!(d.blinker_right || d.hazard));
 
     // --- прилади ---
     set("dash-speed", String(speed));
