@@ -15,6 +15,8 @@ import { networkInterfaces, homedir } from "node:os";
 import { join, extname, normalize, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { toLngLat } from "../web/projection.js";
+import { latestWallet } from "./save.ts";
+import { coatOfArms } from "./coats.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 // той самий шлях, що й у плагіні (plugin/src/plugin.cpp)
@@ -298,6 +300,29 @@ function raise(kind: Alert["kind"], title: string, text: string) {
 	console.log(`сповіщення: ${title} — ${text}`);
 }
 
+// ---------- гаманець і кредит (зі збереження гри, див. save.ts) ----------
+
+const moneyEvents: { t: number; amount: number }[] = [];
+
+function walletFor(d: Snapshot) {
+	const { wallet, error } = latestWallet(String(d.game_id));
+	if (!wallet) return error ? { error } : null;
+	// збереження відстає від гри: додаємо грошові події, що сталися після нього
+	const after = moneyEvents.filter((e) => e.t > wallet.saved_at);
+	const delta = after.reduce((s, e) => s + e.amount, 0);
+	return {
+		money: wallet.money + delta,
+		money_saved: wallet.money,
+		adjusted: after.length > 0,
+		loan: wallet.loan,
+		loan_original: wallet.loan_original,
+		loan_limit: wallet.loan_limit,
+		loans: wallet.loans,
+		saved_at: wallet.saved_at,
+		error,
+	};
+}
+
 function updateAlerts(d: Snapshot) {
 	// перша прочитана подія або зміна гри — це історія, а не новина
 	const ev = Number(d.event_seq);
@@ -323,6 +348,11 @@ function updateAlerts(d: Snapshot) {
 			case "player.tollgate.paid":
 				raise("info", "Платна дорога", money(d, amount));
 				break;
+		}
+		// для гаманця між збереженнями: дохід (+) або штраф/оплата (−), з часом події
+		if (["player.fined", "job.delivered", "job.cancelled", "player.tollgate.paid"].includes(String(d.event_id))) {
+			moneyEvents.push({ t: Date.now(), amount });
+			if (moneyEvents.length > 200) moneyEvents.shift();
 		}
 	}
 
@@ -430,6 +460,7 @@ function poll() {
 	data.maneuver = maneuver;
 	updateAlerts(data);
 	data.alert = alert;
+	data.wallet = walletFor(data);
 	state = { status, data, tiles: availableTiles };
 }
 
@@ -502,6 +533,16 @@ const server = createServer((req, res) => {
 	if (url.pathname === "/api/state") {
 		res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-cache" });
 		res.end(JSON.stringify(state, null, 2));
+		return;
+	}
+
+	if (url.pathname === "/api/coa") {
+		const game = url.searchParams.get("game") ?? "";
+		const city = url.searchParams.get("city") ?? "";
+		coatOfArms(MAPDATA, game, city).then(
+			(u) => { res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "max-age=86400" }); res.end(JSON.stringify({ url: u })); },
+			() => { res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify({ url: null })); },
+		);
 		return;
 	}
 

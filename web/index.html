@@ -70,20 +70,32 @@
     </div>
     <div class="cargo" id="cargo-job" hidden>
       <div class="cargo-head">
-        <div class="cargo-name" id="cargo-name"></div>
+        <div class="cargo-name"><span class="ico">📦</span><span id="cargo-name"></span></div>
         <div class="badge" id="cargo-special" hidden>Спецзавдання</div>
       </div>
       <div class="route">
-        <div><div class="label">Звідки</div><div class="city" id="cargo-src-city"></div><div class="company" id="cargo-src-company"></div></div>
+        <div class="place">
+          <img class="coa" id="cargo-src-coa" alt="" hidden>
+          <div class="place-text"><div class="label"><span class="ico">🏭</span>Звідки</div><div class="city" id="cargo-src-city"></div><div class="company" id="cargo-src-company"></div></div>
+        </div>
         <div class="arrow">→</div>
-        <div><div class="label">Куди</div><div class="city" id="cargo-dst-city"></div><div class="company" id="cargo-dst-company"></div></div>
+        <div class="place">
+          <img class="coa" id="cargo-dst-coa" alt="" hidden>
+          <div class="place-text"><div class="label"><span class="ico">🏁</span>Куди</div><div class="city" id="cargo-dst-city"></div><div class="company" id="cargo-dst-company"></div></div>
+        </div>
       </div>
-      <div class="grid">
-        <div><div class="label">Маса</div><div class="big" id="cargo-mass"></div></div>
-        <div><div class="label">Оплата</div><div class="big" id="cargo-income"></div></div>
-        <div><div class="label">Відстань</div><div class="big" id="cargo-planned"></div></div>
-        <div><div class="label">До дедлайну</div><div class="big" id="cargo-deadline"></div></div>
-        <div><div class="label">Пошкодження</div><div class="big" id="cargo-damage"></div></div>
+      <div class="tiles">
+        <div class="tile"><div class="label"><span class="ico">⚖️</span>Маса</div><div class="big" id="cargo-mass"></div></div>
+        <div class="tile"><div class="label"><span class="ico" id="cargo-income-ico">💶</span>Оплата</div><div class="big" id="cargo-income"></div></div>
+        <div class="tile"><div class="label"><span class="ico">🛣️</span>Відстань</div><div class="big" id="cargo-planned"></div></div>
+        <div class="tile"><div class="label"><span class="ico">⏱️</span>До дедлайну</div><div class="big" id="cargo-deadline"></div></div>
+        <div class="tile"><div class="label"><span class="ico">🛠️</span>Пошкодження</div><div class="big" id="cargo-damage"></div></div>
+      </div>
+    </div>
+    <div class="finance" id="finance" hidden>
+      <div class="tiles">
+        <div class="tile"><div class="label"><span class="ico">👛</span>Гаманець</div><div class="big" id="fin-money"></div><div class="sub" id="fin-money-sub"></div></div>
+        <div class="tile"><div class="label"><span class="ico">🏦</span>Кредит</div><div class="big" id="fin-loan"></div><div class="sub" id="fin-loan-sub"></div></div>
       </div>
     </div>
   </section>

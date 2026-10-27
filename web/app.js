@@ -2,6 +2,7 @@
 // Потребує сучасного Safari (ES-модулі, WebGL2 для карти — iOS 15+).
 
 import { updateMap, setMode, getMode, zoomBy } from "./map.js";
+import { initDraggable } from "./drag.js";
 
 (function () {
   "use strict";
@@ -213,6 +214,51 @@ import { updateMap, setMode, getMode, zoomBy } from "./map.js";
     toggleClass($("maneuver"), "soon", m.dist < 400);
   }
 
+  // ---------- герби міст (сервер шукає їх у Wikidata й кешує) ----------
+
+  var coatUrls = {};      // "гра:місто" → url | null
+  var coatShown = {};     // id <img> → "гра:місто", що вже показано
+  function setCoat(imgId, game, city) {
+    var img = $(imgId);
+    var key = game + ":" + city;
+    if (!city) { img.hidden = true; coatShown[imgId] = ""; return; }
+    if (coatShown[imgId] === key) return;
+    coatShown[imgId] = key;
+    img.hidden = true;
+    function apply(url) {
+      if (coatShown[imgId] !== key) return; // місто вже змінилось
+      if (!url) return;
+      img.onload = function () { img.hidden = false; };
+      img.onerror = function () { img.hidden = true; };
+      img.src = url;
+    }
+    if (key in coatUrls) { apply(coatUrls[key]); return; }
+    fetch("api/coa?game=" + encodeURIComponent(game) + "&city=" + encodeURIComponent(city))
+      .then(function (r) { return r.json(); })
+      .then(function (j) { coatUrls[key] = j.url; apply(j.url); }, function () { /* без герба */ });
+  }
+
+  // ---------- фінанси (зі збереження гри + події після нього) ----------
+
+  function savedAt(ms) {
+    var t = new Date(ms);
+    return pad2(t.getHours()) + ":" + pad2(t.getMinutes());
+  }
+  function renderFinance(w) {
+    show("finance", !!w && w.money !== undefined);
+    if (!w || w.money === undefined) return;
+    set("fin-money", (w.adjusted ? "≈ " : "") + fmtInt(w.money) + " " + U.money);
+    $("fin-money").className = "big " + (w.money < 0 ? "bad" : "");
+    set("fin-money-sub", "збереження о " + savedAt(w.saved_at) + (w.adjusted ? " + події після нього" : ""));
+    if (w.loans > 0) {
+      set("fin-loan", fmtInt(w.loan) + " " + U.money);
+      set("fin-loan-sub", "з " + fmtInt(w.loan_original) + " " + U.money + " · ліміт " + fmtInt(w.loan_limit) + " " + U.money);
+    } else {
+      set("fin-loan", "немає");
+      set("fin-loan-sub", w.loan_limit > 0 ? "доступно до " + fmtInt(w.loan_limit) + " " + U.money : "");
+    }
+  }
+
   // ---------- рендер ----------
 
   function render(s) {
@@ -290,7 +336,11 @@ import { updateMap, setMode, getMode, zoomBy } from "./map.js";
       var dmg = d.job_cargo_damage * 100;
       set("cargo-damage", dmg.toFixed(1) + " %");
       $("cargo-damage").className = "big " + (dmg >= 5 ? "bad" : dmg > 0 ? "" : "good");
+      set("cargo-income-ico", U.money === "$" ? "💵" : "💶");
+      setCoat("cargo-src-coa", d.game_id, d.job_src_city_id);
+      setCoat("cargo-dst-coa", d.game_id, d.job_dst_city_id);
     }
+    renderFinance(d.wallet);
 
     // --- прилади ---
     set("dash-speed", String(speed));
@@ -324,6 +374,21 @@ import { updateMap, setMode, getMode, zoomBy } from "./map.js";
     var a = d.alert;
     if (a && lastAlertSeq !== null && a.seq !== lastAlertSeq) showAlert(a);
     lastAlertSeq = a ? a.seq : 0;
+  }
+
+  // ---------- панелі поверх карти: перетягування пальцем ----------
+
+  initDraggable(document.querySelector(".page-map"), {
+    info: document.querySelector(".nav-info"),
+    side: document.querySelector(".overlay.nav-side"),
+    maneuver: $("maneuver"),
+    buttons: document.querySelector(".map-buttons")
+  });
+  if (storageGet("panels-hint") !== "seen") {
+    setTimeout(function () {
+      showAlert({ kind: "info", title: "Панелі можна пересувати", text: "Перетягніть пальцем; подвійний дотик повертає на місце" });
+      storageSet("panels-hint", "seen");
+    }, 1500);
   }
 
   // ---------- кнопки карти ----------
