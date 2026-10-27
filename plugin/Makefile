@@ -27,9 +27,9 @@ build/ets2-phone-nav.dylib: src/plugin.cpp src/shm_layout.h
 	clang++ -arch x86_64 $(COMMON) -fPIC -dynamiclib -install_name @rpath/ets2-phone-nav.dylib -o $@ src/plugin.cpp
 
 # статично лінкуємо рантайм mingw — гра не мусить мати libstdc++-6.dll поруч
-build/ets2-phone-nav.dll: src/plugin.cpp src/shm_layout.h
+build/ets2-phone-nav.dll: src/plugin.cpp src/shm_layout.h src/exports.def
 	@mkdir -p build
-	$(MINGW) $(COMMON) -shared -static -static-libgcc -static-libstdc++ -o $@ src/plugin.cpp
+	$(MINGW) $(COMMON) -shared -static -static-libgcc -static-libstdc++ -o $@ src/plugin.cpp src/exports.def
 
 # layout_dump збираємо під поточну систему: зсуви не залежать від ОС (див. вище)
 $(LAYOUT): src/layout_dump.cpp src/shm_layout.h

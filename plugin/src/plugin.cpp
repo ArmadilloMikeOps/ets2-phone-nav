@@ -14,6 +14,7 @@
 
 #include <atomic>
 #include <stdio.h>
+#include <stdlib.h> // _wgetenv у MSVC
 #include <string.h>
 
 #ifdef _WIN32
@@ -37,7 +38,7 @@
 #include "shm_layout.h"
 
 #ifdef _WIN32
-#  define TRUCKNAV_EXPORT extern "C" __declspec(dllexport)
+#  define TRUCKNAV_EXPORT extern "C" // експорт — через src/exports.def (MSVC не дозволяє dllexport тут, C2375)
 #else
 #  define TRUCKNAV_EXPORT extern "C" __attribute__((visibility("default")))
 #endif

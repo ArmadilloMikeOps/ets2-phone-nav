@@ -12,6 +12,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(ets2-phone-nav SHARED src/plugin.cpp)
+if(WIN32)
+	target_sources(ets2-phone-nav PRIVATE src/exports.def) # експорти без dllexport (див. exports.def)
+endif()
 target_include_directories(ets2-phone-nav PRIVATE
 	vendor/scs_sdk/include
 	vendor/scs_sdk/include/common

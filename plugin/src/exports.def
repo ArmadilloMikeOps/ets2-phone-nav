@@ -1,0 +1,7 @@
+; Windows exports for the plugin (MSVC and mingw-w64).
+; A .def file instead of __declspec(dllexport): the SDK headers already declare
+; these functions without dllexport, and MSVC rejects a linkage change (C2375).
+LIBRARY ets2-phone-nav
+EXPORTS
+    scs_telemetry_init
+    scs_telemetry_shutdown
